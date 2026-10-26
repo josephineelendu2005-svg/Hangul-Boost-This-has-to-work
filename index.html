@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2e9e5b">
+<meta name="apple-mobile-web-app-title" content="Hangul Boost">
+<title>Hangul Boost</title>
+<link rel="apple-touch-icon" id="ati">
+<style>
+:root{color-scheme:light dark;--bg:#f4f9ef;--card:#fff;--tx:#1d2a1d;--mu:#667566;--g:#2e9e5b;--gs:#dff3e5;--y:#e9b824;--ys:#fff4cc;--bd:#dde8d6;--bt:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#101a12;--card:#18241b;--tx:#eaf3ea;--mu:#9bb09c;--g:#4cc57f;--gs:#1b3a27;--y:#f2c94c;--ys:#3a3317;--bd:#2a3a2d;--bt:#0b1a10}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;padding-top:env(safe-area-inset-top,0px);-webkit-tap-highlight-color:transparent}
+main{max-width:520px;margin:0 auto;padding:14px 16px calc(84px + env(safe-area-inset-bottom,0px))}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{font-size:22px;margin:0}h1 span{color:var(--g)}h2{font-size:17px;margin:0 0 8px}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--gs);color:var(--g);font-weight:600}.chip.w{background:var(--ys);color:var(--tx)}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:20px;padding:18px;margin-bottom:14px;transition:background .2s,border-color .2s}
+.card.g{background:var(--gs);border-color:var(--g)}.card.y{background:var(--ys);border-color:var(--y)}
+.mu{color:var(--mu);font-size:14px}.sm{font-size:12.5px}
+.lab{color:var(--mu);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.en{font-size:32px;font-weight:700;margin:4px 0 12px;line-height:1.2}
+.ko{font-size:44px;font-weight:700;color:var(--g);margin:4px 0}
+.fb{font-weight:600;margin:6px 0 10px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:14px;padding:12px 16px;background:var(--g);color:var(--bt);cursor:pointer;margin:4px 6px 4px 0}
+.btn.ghost{background:transparent;color:var(--tx);border:2px solid var(--bd)}
+.mic{display:block;width:92px;height:92px;border-radius:50%;margin:12px auto 6px;font-size:34px;background:var(--g);border:0;color:var(--bt);box-shadow:0 6px 18px rgba(46,158,91,.35)}
+.mic.on{background:#d64545;color:#fff;animation:p 1s infinite}.mic:disabled{opacity:.55}
+@keyframes p{50%{transform:scale(1.07)}}@media (prefers-reduced-motion:reduce){.mic.on{animation:none}}
+.lvl{height:10px;border-radius:6px;background:var(--bd);overflow:hidden;margin:6px 24px}.lvl i{display:block;height:100%;width:0;background:var(--g);transition:width .08s}
+.row{display:flex;gap:8px;margin-top:6px}input,textarea{font:inherit;font-size:16px;width:100%;padding:11px 12px;border-radius:12px;border:2px solid var(--bd);background:var(--bg);color:var(--tx)}
+textarea{resize:vertical}code{background:var(--bg);padding:1px 5px;border-radius:6px}
+.c{text-align:center}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--bg);border-radius:14px;padding:12px;text-align:center}.stat b{display:block;font-size:26px;color:var(--g)}
+.item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--bd)}.item:first-of-type{border-top:0}
+.item b{font-size:18px}.x{background:none;border:0;color:var(--mu);font-size:18px;padding:6px}
+.bars{display:flex;gap:8px;align-items:flex-end;height:110px;margin-top:8px}.bar{flex:1;text-align:center;font-size:12px;color:var(--mu)}.bar i{display:block;background:var(--ys);border:1px solid var(--y);border-radius:6px 6px 0 0;position:relative;min-height:2px}.bar u{position:absolute;inset:auto 0 0 0;background:var(--g);border-radius:5px 5px 0 0}
+details{margin-top:8px}summary{font-weight:600;cursor:pointer}details ul{padding-left:20px;margin:8px 0}details a{color:var(--g)}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;font:inherit;font-size:12px;background:none;border:0;color:var(--mu);padding:10px 0 8px;cursor:pointer}nav button b{display:block;font-size:20px}nav button.a{color:var(--g);font-weight:700}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(80px + env(safe-area-inset-bottom,0px));background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:12px;font-size:14px;display:none}
+</style></head><body>
+<main id="app"></main>
+<nav id="nav"></nav><div id="toast"></div>
+<script src="recorder.js"></script>
+<script>
+const $=s=>document.querySelector(s),HG=/[\u3131-\u318E\uAC00-\uD7A3]/,KEY='hangulBoost.v1';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s).normalize('NFC').toLowerCase().replace(/[\s.,!?~'"“”‘’()\-·]/g,'');
+const sup=HBRec.support();
+let S={words:[],log:{}},canSave=false,view='practice',cur=null,last=null,tries=0,hinted=false,solved=false,fb=null,
+ mic='idle',ctrl=null,micMsg='',heard='',addNote='',bk='',rst=false;
+const day=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function load(){try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);localStorage.setItem(KEY+'.t','1');canSave=true}catch(e){canSave=false}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));canSave=true}catch(e){canSave=false}}
+const dl=()=>S.log[day()]||(S.log[day()]={a:0,f:0,c:0});
+const hard=w=>w.n-w.f>=2&&w.f/w.n<=.5;
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',5000)}
+function pick(){const ws=S.words;if(!ws.length){cur=null;return}
+ const pool=ws.length>1?ws.filter(w=>w.id!==last):ws,wt=pool.map(w=>1+(w.n?0:1)+2*Math.max(0,w.n-w.f));
+ let r=Math.random()*wt.reduce((a,b)=>a+b,0),i=0;while(r>wt[i]&&i<pool.length-1){r-=wt[i];i++}
+ cur=pool[i];last=cur.id;tries=0;hinted=false;solved=false;fb=null;micMsg='';heard=''}
+function finish(ok){cur.n++;const d=dl();d.c++;if(ok&&tries===1&&!hinted){cur.f++;d.f++}solved=true}
+function judge(alts,spoken){if(solved||!cur)return;tries++;cur.a++;dl().a++;
+ const t=norm(cur.ko),ok=alts.some(a=>norm(a).includes(t));
+ if(ok){finish(true);fb={k:'g',first:tries===1&&!hinted,spoken}}else fb={k:'y',heard:alts[0]||'',spoken};
+ save();render();if(ok)say(cur.ko)}
+function say(t,manual){try{const s=speechSynthesis;if(!s)throw 0;s.cancel();const u=new SpeechSynthesisUtterance(t),vs=s.getVoices();u.lang='ko-KR';u.rate=.8;
+ const v=vs.find(v=>v.lang.replace('_','-').toLowerCase().startsWith('ko'));if(v)u.voice=v;else if(manual&&vs.length)toast('No Korean voice found. Add one in Settings → Accessibility → Spoken Content → Voices → Korean.');s.speak(u)}catch(e){toast('Audio playback is not available in this browser.')}}
+function hear(){if(!solved)hinted=true;say(cur.ko,true);render()}
+function setLevel(v){const el=$('#lvl');if(el)el.style.width=Math.round(v*100)+'%'}
+async function listen(){
+ if(mic==='busy'||solved)return;
+ if(mic==='rec'){if(ctrl)ctrl.stop();return}
+ micMsg='';heard='';mic='rec';ctrl=null;render();
+ try{ctrl=await HBRec.begin(setLevel)}catch(e){mic='idle';micMsg=HBRec.explain(e);render();return}
+ try{
+  const r=await ctrl.done;ctrl=null;
+  if(r.silent){mic='idle';micMsg=HBRec.explain({code:'silent'});render();return}
+  mic='busy';render();
+  const out=await HBRec.transcribe(r);mic='idle';
+  if(!out.text){micMsg='I couldn’t make out any speech. Move closer and try again.';render();return}
+  judge([out.text],true)
+ }catch(e){ctrl=null;mic='idle';micMsg=HBRec.explain(e);render()}}
+function typed(){const v=$('#ta').value.trim();if(v)judge([v],false)}
+function reveal(){if(solved)return;finish(false);fb={k:'r'};save();render();say(cur.ko)}
+function next(){pick();render()}
+function go(v){view=v;rst=false;render()}
+function sample(){addPairs('안녕하세요 - hello\n감사합니다 - thank you\n물 - water\n사과 - apple\n학교 - school');if(!cur)pick();render()}
+function addPairs(txt){let added=0,dup=0,bad=0;
+ txt.split(/\n/).map(l=>l.trim()).filter(Boolean).forEach(l=>{
+  const seps=[/\t/,/\s[-–—]\s/,/[=:|;]/,/,/];let p=null;
+  for(const s of seps){const m=l.split(s);if(m.length>=2){p=[m[0].trim(),m.slice(1).join(' ').trim()];break}}
+  if(!p||!p[0]||!p[1]){bad++;return}
+  const a=HG.test(p[0]),b=HG.test(p[1]);if(a===b){bad++;return}
+  const ko=a?p[0]:p[1],en=a?p[1]:p[0];
+  if(S.words.some(w=>norm(w.ko)===norm(ko))){dup++;return}
+  S.words.push({id:Date.now()+added+Math.floor(Math.random()*1e4),ko,en,a:0,n:0,f:0});added++});
+ addNote=`Added ${added}${dup?`, skipped ${dup} duplicate${dup>1?'s':''}`:''}${bad?`, couldn’t read ${bad} line${bad>1?'s':''} (each line needs one Korean and one English part)`:''}.`;save()}
+function addWords(){addPairs($('#paste').value);if(!cur)pick();render()}
+function del(id){S.words=S.words.filter(w=>w.id!==id);if(cur&&cur.id===id)pick();save();render()}
+function exp(){bk=JSON.stringify(S);try{navigator.clipboard.writeText(bk).then(()=>toast('Backup copied.'),()=>toast('Select the text below and copy it.'))}catch(e){toast('Select the text below and copy it.')}render()}
+function imp(){try{const d=JSON.parse($('#imp').value);if(!Array.isArray(d.words))throw 0;S={words:d.words,log:d.log||{}};save();pick();addNote='Backup restored.';render()}catch(e){toast('That doesn’t look like a Hangul Boost backup.')}}
+function resetP(){if(!rst){rst=true;render();return}S.words.forEach(w=>{w.a=w.n=w.f=0});S.log={};rst=false;save();render()}
+const help=`<details class=card><summary>🎙️ Microphone troubleshooting</summary><ul class=mu>
+<li>Tap the mic <b>once</b>, allow the microphone when asked, speak, then pause. It finishes by itself, or tap the red button to stop.</li>
+<li>Blocked? In Safari tap <b>aA</b> → Website Settings → Microphone → Allow, then reload. Also check Settings → Privacy &amp; Security → Microphone.</li>
+<li>No green bar movement? The phone isn’t hearing you. Remove cases or headsets covering the mic.</li>
+<li>Error about the server or key? The speech service isn’t set up yet (see README).</li>
+<li>Quiet audio after recording? Lock and unlock your phone, then try 🔊 again.</li>
+<li><a href="diagnostic.html">Run the step-by-step mic test</a> to see exactly where it fails.</li>
+<li>You can always type instead: use the Korean keyboard.</li></ul></details>`;
+function rPractice(){
+ if(!S.words.length)return`<div class=card><h2>Welcome 🌱</h2><p class=mu>Add the Korean words you’ve learned, then I’ll show an English meaning and you say the Korean.</p><button class=btn onclick="go('words')">Add my words</button><button class="btn ghost" onclick="sample()">Try 5 sample words</button></div>`+help;
+ if(!cur)pick();const w=cur,k=fb?fb.k:'';
+ let f='';
+ if(k==='g')f=`<div class=fb>✅ ${fb.first?'First try! ':'Yes! '}${fb.spoken?'I heard':'Correct:'} <b>${esc(w.ko)}</b>.</div>`;
+ else if(k==='y')f=`<div class=fb>🟡 Not quite, try again.${fb.heard?` I heard: “${esc(fb.heard)}”`:''}</div>`;
+ else if(k==='r')f=`<div class=fb>The answer is below. Say it out loud, then tap Next.</div>`;
+ const lab={idle:'Tap and say the Korean word',rec:'🔴 Recording… speak, then pause (or tap to stop)',busy:'Turning your speech into text…'}[mic];
+ return`<div class="card ${k==='g'?'g':k==='y'?'y':''}">
+ <div class=lab>${solved?'Answer':'Say this in Korean'}</div><div class=en>${esc(w.en)}</div>
+ ${solved?`<div class=ko>${esc(w.ko)}</div>`:''}${f}
+ ${solved?`<button class=btn onclick="next()">Next word →</button><button class="btn ghost" onclick="hear()">🔊 Hear again</button>`:`
+ ${sup.ok?`<button class="mic ${mic==='rec'?'on':''}" onclick="listen()" ${mic==='busy'?'disabled':''} aria-label="${mic==='rec'?'Stop recording':'Speak'}">${mic==='rec'?'■':mic==='busy'?'…':'🎤'}</button>
+ <div class=lvl><i id=lvl></i></div><div class="c mu">${lab}</div>`:`<div class=fb>🎙️ The microphone isn’t available here (${!sup.secure?'page is not https':'this browser can’t record'}). Type your answer instead.</div>`}
+ ${micMsg?`<div class="mu" style="margin-top:8px">⚠️ ${esc(micMsg)}</div>`:''}
+ <div class=row><input id=ta placeholder="Or type the Korean (한글)" autocapitalize=off autocomplete=off onkeydown="if(event.key==='Enter')typed()"><button class=btn style="margin:0" onclick="typed()">Check</button></div>
+ <div style="margin-top:8px"><button class="btn ghost" onclick="hear()">🔊 Hear answer</button><button class="btn ghost" onclick="reveal()">Show answer</button></div>
+ ${hinted?'<div class="mu sm">Audio hint used. This card won’t count as a first-try success.</div>':''}`}
+ </div>
+ <p class="mu sm">Green means the recognised <b>text</b> matched the word. It does <b>not</b> score your accent or pronunciation.</p>${help}`}
+function rWords(){const ws=S.words;
+ return`<div class=card><h2>Add words</h2><p class=mu>Paste one pair per line, e.g. <code>사과 - apple</code> or <code>apple, 사과</code>. Either order works.</p>
+ <textarea id=paste rows=6 placeholder="사과 - apple&#10;물 - water"></textarea><button class=btn onclick="addWords()">Add words</button>${addNote?`<div class=mu>${esc(addNote)}</div>`:''}</div>
+ <div class=card><h2>My words (${ws.length})</h2>${ws.length?ws.map(w=>`<div class=item><div><b>${esc(w.ko)}</b> <span class=mu>${esc(w.en)}</span></div><button class=x onclick="del(${w.id})" aria-label="Delete">✕</button></div>`).join(''):'<p class=mu>No words yet.</p>'}</div>
+ <div class=card><h2>Backup &amp; moving devices</h2><p class="mu sm">Words and progress are stored in this browser on this device, with no login. iPhone can clear website data, so copy a backup now and then.</p>
+ <button class="btn ghost" onclick="exp()">Copy backup</button>${bk?`<textarea readonly rows=3 onfocus="this.select()">${esc(bk)}</textarea>`:''}
+ <textarea id=imp rows=2 placeholder="Paste a backup here to restore (replaces current data)" style="margin-top:8px"></textarea><button class="btn ghost" onclick="imp()">Restore backup</button></div>
+ <p class="mu sm">Privacy: when you use the mic, a short recording is sent to a speech-to-text service to get the text. Nothing is saved by this app.</p>`}
+function rProgress(){const ws=S.words,A=ws.reduce((s,w)=>s+w.a,0),N=ws.reduce((s,w)=>s+w.n,0),F=ws.reduce((s,w)=>s+w.f,0),H=ws.filter(hard).sort((a,b)=>(b.n-b.f)-(a.n-a.f));
+ const days=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push([d,S.log[day(d)]||{a:0,f:0,c:0}])}
+ const mx=Math.max(1,...days.map(x=>x[1].c));let st=0;for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);const l=S.log[day(d)];if(l&&l.c>0)st++;else if(i>0)break}
+ return`<div class=card><h2>Your progress</h2><div class=grid>
+ <div class=stat><b>${N}</b><span class=mu>words practised</span></div><div class=stat><b>${N?Math.round(F/N*100):0}%</b><span class=mu>first-try rate</span></div>
+ <div class=stat><b>${A}</b><span class=mu>attempts</span></div><div class=stat><b>${st}🔥</b><span class=mu>day streak</span></div></div></div>
+ <div class=card><h2>Last 7 days</h2><div class=mu>Cards finished (<span style="color:var(--g)">green</span> = first try)</div><div class=bars>${days.map(([d,l])=>`<div class=bar><i style="height:${l.c/mx*80}px"><u style="height:${l.c?l.f/l.c*100:0}%"></u></i>${'SMTWTFS'[d.getDay()]}</div>`).join('')}</div></div>
+ <div class=card><h2>Difficult words</h2>${H.length?H.map(w=>`<div class=item><div><b>${esc(w.ko)}</b> <span class=mu>${esc(w.en)}</span><div class="mu sm">first try ${w.f} of ${w.n}</div></div><button class=btn style="margin:0" onclick="say('${esc(w.ko)}',true)">🔊</button></div>`).join(''):'<p class=mu>None yet. Words you miss a few times will show up here and appear more often in practice.</p>'}</div>
+ <button class="btn ghost" onclick="resetP()">${rst?'Tap again to confirm reset':'Reset progress (keeps words)'}</button>`}
+function render(){const ch=canSave?'<span class=chip>Saved on this device</span>':'<span class="chip w">⚠ Not saving</span>';
+ $('#app').innerHTML=`<header><h1>Hangul <span>Boost</span></h1>${ch}</header>`+(canSave?'':'<div class="card y mu">Your browser is blocking storage, so words and progress will be lost when you close this page.</div>')+(view==='practice'?rPractice():view==='words'?rWords():rProgress());
+ $('#nav').innerHTML=[['practice','🎤','Practice'],['words','➕','Words'],['progress','📈','Progress']].map(([v,i,t])=>`<button class="${v===view?'a':''}" onclick="go('${v}')"><b>${i}</b>${t}</button>`).join('')}
+try{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');x.fillStyle='#2e9e5b';x.fillRect(0,0,180,180);x.fillStyle='#fff';x.font='bold 110px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('한',90,92);x.fillStyle='#f2c94c';x.beginPath();x.arc(148,32,12,0,7);x.fill();$('#ati').href=c.toDataURL('image/png')}catch(e){}
+load();pick();render();
+</script></body></html>
