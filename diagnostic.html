@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hangul Boost: Mic Test</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f9ef;--card:#fff;--tx:#1d2a1d;--mu:#667566;--g:#2e9e5b;--ys:#fff4cc;--y:#e9b824;--bd:#dde8d6}
+@media (prefers-color-scheme:dark){:root{--bg:#101a12;--card:#18241b;--tx:#eaf3ea;--mu:#9bb09c;--g:#4cc57f;--ys:#3a3317;--y:#f2c94c;--bd:#2a3a2d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,"Apple SD Gothic Neo",system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:520px;margin:0 auto;padding:16px}h1{font-size:22px;margin:0 0 4px}.mu{color:var(--mu);font-size:14px}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0}
+.step{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--bd)}.step:first-child{border-top:0}.step b{display:block}.step span{color:var(--mu);font-size:14px;word-break:break-word}
+.btn{font:inherit;font-weight:700;border:0;border-radius:14px;padding:13px 18px;background:var(--g);color:#fff;margin:4px 6px 4px 0}
+:root .btn{color:#fff}@media (prefers-color-scheme:dark){.btn{color:#0b1a10}}
+.btn.o{background:transparent;color:var(--tx);border:2px solid var(--bd)}.btn:disabled{opacity:.5}
+#bar{height:14px;border-radius:8px;background:var(--bd);overflow:hidden;margin:8px 0}#bar i{display:block;height:100%;width:0;background:var(--g);transition:width .08s}
+.out{font-size:34px;font-weight:700;margin:6px 0}audio{width:100%;margin-top:8px}pre{white-space:pre-wrap;word-break:break-word;font-size:12px;background:var(--bg);padding:8px;border-radius:10px}
+</style></head><body><main>
+<h1>🎤 Mic test</h1><p class="mu">Runs every step of the speech pipeline and shows where it fails. <a href="index.html" style="color:var(--g)">Back to the app</a></p>
+<div class="card" id="steps"></div>
+<div class="card">
+  <button class="btn" id="go">Record a Korean word</button><button class="btn o" id="stop" disabled>Stop</button>
+  <div id="bar"><i></i></div><div class="mu" id="status">Tap the button, allow the microphone, say one word (e.g. 물), then stop talking. It stops by itself.</div>
+  <audio id="play" controls hidden></audio>
+  <div class="out" id="out"></div><pre id="raw" hidden></pre>
+</div>
+<script src="recorder.js"></script>
+<script>
+const $=s=>document.querySelector(s),S={};
+function step(id,title,state,detail){S[id]={title,state,detail};
+ $('#steps').innerHTML=Object.values(S).map(s=>`<div class=step><div>${{ok:'✅',bad:'❌',wait:'⏳',skip:'➖'}[s.state]}</div><div><b>${s.title}</b><span>${s.detail||''}</span></div></div>`).join('')}
+const sup=HBRec.support();
+step(1,'Secure connection (https)',sup.secure?'ok':'bad',sup.secure?location.origin:'Open the https:// Vercel address, not a file or http link.');
+step(2,'Microphone API',sup.gum?'ok':'bad',sup.gum?'getUserMedia available':'Not available in this browser');
+step(3,'Audio recorder',sup.mr?'ok':'bad',sup.mr?'MediaRecorder format: '+(sup.type||'browser default'):'MediaRecorder not available. Update iOS.');
+step(4,'Server ready','wait','Checking…');
+fetch('/api/transcribe',{cache:'no-store'}).then(r=>r.json()).then(j=>step(4,'Server ready',j.configured?'ok':'bad',j.configured?'Server function found and speech key is set':'Function found, but GROQ_API_KEY is missing. See README step 4.')).catch(()=>step(4,'Server ready','bad','/api/transcribe not reachable. Deploy the full folder to Vercel.'));
+step(5,'Microphone capture','skip','Not tested yet');step(6,'Audio actually recorded','skip','');step(7,'Korean transcription','skip','');
+let ctl=null;
+$('#go').onclick=async()=>{
+ if(!sup.ok){$('#status').textContent='Fix the ❌ steps above first.';return}
+ $('#go').disabled=true;$('#out').textContent='';$('#raw').hidden=true;$('#play').hidden=true;
+ step(5,'Microphone capture','wait','Waiting for permission…');step(6,'Audio actually recorded','skip','');step(7,'Korean transcription','skip','');
+ try{ctl=await HBRec.begin(v=>$('#bar i').style.width=Math.round(v*100)+'%')}
+ catch(e){step(5,'Microphone capture','bad',HBRec.explain(e));$('#go').disabled=false;return}
+ step(5,'Microphone capture','ok','Recording. Say a word, then pause.');$('#stop').disabled=false;$('#status').textContent='🔴 Recording…';
+ let r;try{r=await ctl.done}catch(e){step(6,'Audio actually recorded','bad',HBRec.explain(e));reset();return}
+ reset();
+ $('#play').src=URL.createObjectURL(r.blob);$('#play').hidden=false;
+ const lv=r.peak==null?'level meter unavailable':'loudest level '+r.peak.toFixed(3);
+ step(6,'Audio actually recorded',r.silent?'bad':'ok',`${(r.bytes/1024).toFixed(1)} KB, ${(r.ms/1000).toFixed(1)} s, ${r.ext}, ${lv}. ${r.silent?'It sounds silent. Play it back below.':'Play it back below to hear what was captured.'}`);
+ if(r.silent){step(7,'Korean transcription','skip','Skipped: recording was silent.');return}
+ step(7,'Korean transcription','wait','Sending to the server…');$('#status').textContent='Transcribing…';
+ try{const t=await HBRec.transcribe(r);$('#status').textContent='';
+  if(!t.text){step(7,'Korean transcription','bad','The service heard no speech.')}
+  else{step(7,'Korean transcription','ok','Text received');$('#out').textContent=t.text}
+  $('#raw').textContent=JSON.stringify(t,null,1);$('#raw').hidden=false}
+ catch(e){step(7,'Korean transcription','bad',HBRec.explain(e));$('#status').textContent=''}
+};
+$('#stop').onclick=()=>ctl&&ctl.stop();
+function reset(){$('#go').disabled=false;$('#stop').disabled=true;$('#bar i').style.width='0';$('#status').textContent=''}
+</script></main></body></html>
