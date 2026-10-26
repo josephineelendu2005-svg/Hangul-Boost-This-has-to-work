@@ -1,0 +1,7 @@
+{
+  "name": "hangul-boost",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Korean speaking practice with server-side speech-to-text",
+  "engines": { "node": ">=20" }
+}
