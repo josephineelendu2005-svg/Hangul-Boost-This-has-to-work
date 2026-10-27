@@ -38,6 +38,7 @@ module.exports = async (req, res) => {
   form.append('file', new Blob([buf]), 'audio.' + ext);
   form.append('model', process.env.STT_MODEL || 'whisper-large-v3-turbo');
   form.append('language', 'ko');
+  form.append('prompt', '한국어 단어입니다.');
   form.append('temperature', '0');
   form.append('response_format', 'verbose_json');
 
